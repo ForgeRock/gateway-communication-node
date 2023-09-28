@@ -130,9 +130,10 @@ public class IGCommunication extends AbstractDecisionNode {
 					throw new Exception("The returning JWT could not be verified.  Here is the JWT returned from IG: " + context.request.parameters.get(igCommConfig.returningJWTName()).get(0));
 				}
 				
-				//Map the attributes in the claims to the shared state and exit success outcome
+				//TODO Map the attributes in the claims to the shared state and exit success outcome
 				
 				
+				return Action.goTo(SUCCESS).build();
 			}
 			else {
 				//it doesn't, so setup a nonce and redirect to IG
@@ -174,8 +175,6 @@ public class IGCommunication extends AbstractDecisionNode {
 					withErrorMessage(ex.getMessage()).
 					build();
 		}
-
-		return Action.goTo(ERROR).build();
 	}
 	
 	
