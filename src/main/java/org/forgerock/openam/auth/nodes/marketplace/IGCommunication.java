@@ -125,7 +125,7 @@ public class IGCommunication extends AbstractDecisionNode {
 				
 				//TODO Map the attributes in the claims to the shared state and exit success outcome
 				logger.error(loggerPrefix + "Here are all the claims " + theClaimSet.build());
-				
+				 
 				return Action.goTo(SUCCESS).build();
 			}
 			else {
