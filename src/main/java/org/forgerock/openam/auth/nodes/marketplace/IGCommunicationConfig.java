@@ -37,7 +37,7 @@ public interface IGCommunicationConfig {
 	
     @Attribute(order = 400)
     default ToIGSecurity sendToIGSecurity() {
-        return ToIGSecurity.None;
+        return ToIGSecurity.Signed;
     };
 
 	@Attribute(order = 500, validators = { RequiredValueValidator.class })
@@ -52,16 +52,13 @@ public interface IGCommunicationConfig {
 	
 	
     public enum ToIGSecurity {
+
         /**
-         * US Server.
-         */
-        None,
-        /**
-         * EU Server.
+         * Signed.
          */
         Signed,
         /**
-         * SG Server.
+         * Signed and Encrypted.
          */
         EncryptAndSign;
     	
@@ -69,7 +66,6 @@ public interface IGCommunicationConfig {
         @Override
         public String toString() {
             switch(this) {
-                case None: return "None";
                 case Signed: return "Signed";
                 case EncryptAndSign: return "Encrypt And Sign";
                 default: throw new IllegalArgumentException();
@@ -84,7 +80,6 @@ public interface IGCommunicationConfig {
             return ImmutableMap.<String, String>builder()
                     .put("signed", "SIGNED")
                     .put("encsign", "ENCRYPTANDSIGN")
-                    .put("none", "NONE")
                     .build();
         }
     }

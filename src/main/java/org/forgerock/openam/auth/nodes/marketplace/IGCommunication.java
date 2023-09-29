@@ -117,26 +117,17 @@ public class IGCommunication extends AbstractDecisionNode {
 	@Override
 	public Action process(TreeContext context) {
 		try {
-			//does the JWT exist in the returning session
+			//does the JWT exist in the returning request parameters
 			if (context.request.parameters.get(igCommConfig.returningJWTName())!=null) {
 				//it does... lets get to work... check signature, decrypt and map to sharedstate
-				
 				JwtClaimsSet theClaimSet = verifyAndDecryptFromIG(context, context.request.parameters.get(igCommConfig.returningJWTName()).get(0));
-				
-				//TODO Map the attributes in the claims to the shared state and exit success outcome
-				logger.error(loggerPrefix + "Here are all the claims " + theClaimSet.build());
-				 
+				mapClaimsToSS(context, theClaimSet);
 				return Action.goTo(SUCCESS).build();
 			}
 			else {
 				//it doesn't, so setup a nonce and redirect to IG
 				String sendString = "";
 				switch(this.igCommConfig.sendToIGSecurity().name()) {
-				case "None":
-					sendString = getSetNonce(context);
-					if (config.cfgAccountMapperConfigurationToIG()!=null && config.cfgAccountMapperConfigurationToIG().keySet()!=null && config.cfgAccountMapperConfigurationToIG().keySet().size()>0)
-						throw new Exception("Cannot set Send to Gateway Security to None, and configure a mapping to send data to Identity Gateway");
-					break;
 				case "Signed":
 					sendString = getSignedJWT(context);
 					break;
@@ -188,7 +179,7 @@ public class IGCommunication extends AbstractDecisionNode {
 	}
 	
 	private RedirectCallback getRDCallback(TreeContext context, String sendString) throws Exception{
-		String redirectUrl = this.igCommConfig.igURL() + config.route() + "/?" + sendString;
+		String redirectUrl = this.igCommConfig.igURL() + config.route() + "/?" + igCommConfig.returningJWTName() + "=" + sendString;
 		RedirectCallback redirect = new RedirectCallback(redirectUrl, null, "GET");
 		redirect.setTrackingCookie(true);	
 		return redirect;
@@ -273,7 +264,8 @@ public class IGCommunication extends AbstractDecisionNode {
 				String thisVal = ns.get(thisKey).asString();
 				jwtClaims.put(igKey, thisVal);
 				
-			}	
+			}
+		//TODO followup with AM team to see if they can recommend how to do in now dep way
 		jwtClaims.put("referer", context.request.headers.get("referer").get(0));
 		jwtClaims.setIssuer(context.request.hostName);
 		jwtClaims.setSubject(nonce);
@@ -294,6 +286,19 @@ public class IGCommunication extends AbstractDecisionNode {
 		context.getStateFor(this).putShared(NONCE, nonce);
 		return nonce;
 	
+	}
+	
+	private void mapClaimsToSS(TreeContext context, JwtClaimsSet claims) {
+		NodeState ns = context.getStateFor(this);
+		Map<String, String> toSSMap = config.cfgAccountMapperConfiguration();
+		
+		if (toSSMap!=null && toSSMap.keySet()!=null)
+			for(Iterator<String> i = toSSMap.keySet().iterator(); i.hasNext();) {
+				String thisKey = i.next();
+				String ssKey = toSSMap.get(thisKey);
+				String thisVal = claims.get(thisKey).toString();
+				ns.putShared(ssKey, thisVal);
+			}
 	}
 	
 	/**
