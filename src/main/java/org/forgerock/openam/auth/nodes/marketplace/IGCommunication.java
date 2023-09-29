@@ -40,7 +40,6 @@ import org.forgerock.openam.auth.node.api.NodeState;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.forgerock.openam.core.realms.Realm;
 import org.forgerock.openam.sm.AnnotatedServiceRegistry;
-import org.forgerock.secrets.NoSuchSecretException;
 import org.forgerock.secrets.SecretBuilder;
 import org.forgerock.secrets.SecretsProvider;
 import org.forgerock.secrets.keys.KeyEncryptionKey;
@@ -118,26 +117,19 @@ public class IGCommunication extends AbstractDecisionNode {
 	@Override
 	public Action process(TreeContext context) {
 		try {
-			
-			
 			//does the JWT exist in the returning session
 			if (context.request.parameters.get(igCommConfig.returningJWTName())!=null) {
 				//it does... lets get to work... check signature, decrypt and map to sharedstate
 				
 				JwtClaimsSet theClaimSet = verifyAndDecryptFromIG(context, context.request.parameters.get(igCommConfig.returningJWTName()).get(0));
-				//if the claim set is null, then something went wrong and we could not verify of decrypt the JWT.  Throw an exception
-				if (theClaimSet==null) {
-					throw new Exception("The returning JWT could not be verified.  Here is the JWT returned from IG: " + context.request.parameters.get(igCommConfig.returningJWTName()).get(0));
-				}
 				
 				//TODO Map the attributes in the claims to the shared state and exit success outcome
-				
+				logger.error(loggerPrefix + "Here are all the claims " + theClaimSet.build());
 				
 				return Action.goTo(SUCCESS).build();
 			}
 			else {
 				//it doesn't, so setup a nonce and redirect to IG
-				long startTime = new Date().getTime();
 				String sendString = "";
 				switch(this.igCommConfig.sendToIGSecurity().name()) {
 				case "None":
@@ -151,13 +143,6 @@ public class IGCommunication extends AbstractDecisionNode {
 				case "EncryptAndSign":
 					sendString = getEncryptedThenSignedJWT(context);
 				}
-				
-				//FOR DEBUG START.  REMOVE BEFORE PUBLISHING
-				long endTime = new Date().getTime();
-				long runTime = endTime - startTime;
-				logger.error(loggerPrefix + "Ran " + this.igCommConfig.sendToIGSecurity().name() + " and it took: " + runTime);
-				logger.error(loggerPrefix + "Ran " + this.igCommConfig.sendToIGSecurity().name() + " and here is the string to send: " + sendString);
-				//FOR DEBUG END.  REMOVE BEFORE PUBLISHING
 				
 				//redirect the user
 				RedirectCallback rcb = getRDCallback(context, sendString);
@@ -177,35 +162,30 @@ public class IGCommunication extends AbstractDecisionNode {
 		}
 	}
 	
-	
-	private JwtClaimsSet verifyAndDecryptFromIG(TreeContext context, String jwt) throws NoSuchSecretException {
-
+	private JwtClaimsSet verifyAndDecryptFromIG(TreeContext context, String jwt) throws Exception {
+		String nonce = context.getStateFor(this).get(NONCE).asString();
+		context.getStateFor(this).remove(NONCE);
+		
 		JwtBuilderFactory jwtBuilderFactory = new JwtBuilderFactory();
 		EncryptedThenSignedJwt readMe = jwtBuilderFactory.reconstruct(jwt, EncryptedThenSignedJwt.class);
-
 		RsaJWK publicRSAJWK = RsaJWK.parse(this.igCommConfig.signPublicKey());
-		
 		SigningHandler verificationHandler = new SigningManager(new SecretsProvider(Clock.systemDefaultZone())).newVerificationHandler(publicRSAJWK);
 		boolean valid = readMe.verify(verificationHandler);
 		
-		if (!valid)
-			return null;
+		if (!valid) {
+			throw new Exception("Signature check fail for returning JWT from Gateway. Here is the JWT: " + jwt);
+		}
 
 		RsaJWK privateRSAJWK = RsaJWK.parse(this.igCommConfig.decryptPrivateKey());	
 		//TODO need to figure out to use the supported decrypt
 		readMe.decrypt(privateRSAJWK.toRSAPrivateKey());
-		
 		JwtClaimsSet jcs = readMe.getClaimsSet();
-		
 		Date now = new Date();
-		if (jcs.getExpirationTime().after(now) && jcs.getNotBeforeTime().before(now) && jcs.getSubject().equalsIgnoreCase(context.getStateFor(this).get(NONCE).asString())) {
-			context.getStateFor(this).remove(NONCE);
+		if (jcs.getExpirationTime().after(now) && jcs.getNotBeforeTime().before(now) && jcs.getSubject().equalsIgnoreCase(nonce))
 			return jcs;
-		}
 		else 
-			return null;
+			throw new Exception("After sign check pass and decrypt of JWT coming back from IG, the expiration date was off, or the not before date failed or the nonce did not match what was stored in this session.  Heres the nonce: " + nonce + ".  Here are the claims returned: " + jcs.build());
 	}
-	
 	
 	private RedirectCallback getRDCallback(TreeContext context, String sendString) throws Exception{
 		String redirectUrl = this.igCommConfig.igURL() + config.route() + "/?" + sendString;
@@ -213,7 +193,6 @@ public class IGCommunication extends AbstractDecisionNode {
 		redirect.setTrackingCookie(true);	
 		return redirect;
 	}
-	
 	
 	private String getEncryptedThenSignedJWT(TreeContext context) throws Exception{
 		SecureRandom sr = new SecureRandom();
@@ -256,7 +235,6 @@ public class IGCommunication extends AbstractDecisionNode {
 		return ets;
 	}
 	
-	
 	private String getSignedJWT(TreeContext context) throws Exception{
 		SecureRandom sr = new SecureRandom();
 		long randomLong = Math.abs(sr.nextLong());
@@ -279,7 +257,6 @@ public class IGCommunication extends AbstractDecisionNode {
 		return ets;
 	}
 		
-	
 	private JwtClaimsSet getClaimSetToIG(TreeContext context, String nonce)throws Exception{
 		Date now = new Date();
 		Date expireDate = new Date(now.getTime() + this.igCommConfig.jwtExpiration());
@@ -309,7 +286,6 @@ public class IGCommunication extends AbstractDecisionNode {
 		return jwtClaims;
 	}
 	
-	
 	private String getSetNonce(TreeContext context)throws Exception{
 		SecureRandom random = new SecureRandom();
 		long randomLong = random.nextLong();
@@ -320,8 +296,6 @@ public class IGCommunication extends AbstractDecisionNode {
 	
 	}
 	
-	
-
 	/**
 	 * Defines the possible outcomes from this node.
 	 */

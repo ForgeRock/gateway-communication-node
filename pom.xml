@@ -13,7 +13,7 @@
     <artifactId>SecureIGComm</artifactId>
 
     <groupId>org.forgerock.openam.auth.nodes.marketplace</groupId>
-    <version>0.0.24</version>    
+    <version>0.0.28</version>    
     <name>Secure IG Comm Node</name>
     <description>Secures communication between Identity Gateway and Identity Cloud</description>
 
