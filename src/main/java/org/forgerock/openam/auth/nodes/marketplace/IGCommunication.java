@@ -25,8 +25,8 @@ import org.forgerock.json.jose.builders.JwtBuilderFactory;
 import org.forgerock.json.jose.builders.SignedJwtBuilderImpl;
 import org.forgerock.json.jose.jwe.EncryptionMethod;
 import org.forgerock.json.jose.jwe.JweAlgorithm;
+import org.forgerock.json.jose.jwe.SignedThenEncryptedJwt;
 import org.forgerock.json.jose.jwk.RsaJWK;
-import org.forgerock.json.jose.jws.EncryptedThenSignedJwt;
 import org.forgerock.json.jose.jws.JwsAlgorithm;
 import org.forgerock.json.jose.jws.SigningManager;
 import org.forgerock.json.jose.jws.handlers.SecretRSASigningHandler;
@@ -158,18 +158,14 @@ public class IGCommunication extends AbstractDecisionNode {
 		context.getStateFor(this).remove(NONCE);
 		
 		JwtBuilderFactory jwtBuilderFactory = new JwtBuilderFactory();
-		EncryptedThenSignedJwt readMe = jwtBuilderFactory.reconstruct(jwt, EncryptedThenSignedJwt.class);
+		SignedThenEncryptedJwt readMe = jwtBuilderFactory.reconstruct(jwt, SignedThenEncryptedJwt.class);
 		RsaJWK publicRSAJWK = RsaJWK.parse(this.igCommConfig.signPublicKey());
 		SigningHandler verificationHandler = new SigningManager(new SecretsProvider(Clock.systemDefaultZone())).newVerificationHandler(publicRSAJWK);
-		boolean valid = readMe.verify(verificationHandler);
-		
-		if (!valid) {
-			throw new Exception("Signature check fail for returning JWT from Gateway. Here is the JWT: " + jwt);
-		}
-
 		RsaJWK privateRSAJWK = RsaJWK.parse(this.igCommConfig.decryptPrivateKey());	
 		//TODO need to figure out to use the supported decrypt
-		readMe.decrypt(privateRSAJWK.toRSAPrivateKey());
+		if (!readMe.decryptAndVerify(privateRSAJWK.toRSAPrivateKey(), verificationHandler)) {
+			throw new Exception("Signature check fail for returning JWT from Gateway. Here is the JWT: " + jwt);
+		}
 		JwtClaimsSet jcs = readMe.getClaimsSet();
 		Date now = new Date();
 		if (jcs.getExpirationTime().after(now) && jcs.getNotBeforeTime().before(now) && jcs.getSubject().equalsIgnoreCase(nonce))
