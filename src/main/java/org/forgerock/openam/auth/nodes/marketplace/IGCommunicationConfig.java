@@ -60,14 +60,14 @@ public interface IGCommunicationConfig {
         /**
          * Signed and Encrypted.
          */
-        EncryptAndSign;
+        SignAndEncrypt;
     	
 
         @Override
         public String toString() {
             switch(this) {
                 case Signed: return "Signed";
-                case EncryptAndSign: return "Encrypt And Sign";
+                case SignAndEncrypt: return "Sign And Encrypt";
                 default: throw new IllegalArgumentException();
             }
         }
