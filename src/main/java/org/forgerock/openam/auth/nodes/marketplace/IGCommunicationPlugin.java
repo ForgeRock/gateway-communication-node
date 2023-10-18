@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  */
 public class IGCommunicationPlugin extends AbstractNodeAmPlugin {
 
-	static String currentVersion = "1.0.0"; 
+	static String currentVersion = "1.0.5"; 
 	static final String logAppender = "[Version: " + currentVersion + "][Marketplace] ";
 	private final Logger logger = LoggerFactory.getLogger(IGCommunicationPlugin.class);
 	private String loggerPrefix = "[IGCommunicationPlugin]" + IGCommunicationPlugin.logAppender;
