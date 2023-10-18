@@ -43,7 +43,6 @@ import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.auth.node.api.NodeState;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.forgerock.openam.core.realms.Realm;
-import org.forgerock.openam.services.baseurl.BaseURLProviderFactory;
 import org.forgerock.openam.sm.AnnotatedServiceRegistry;
 import org.forgerock.secrets.Purpose;
 import org.forgerock.secrets.SecretBuilder;
@@ -74,7 +73,6 @@ public class IGCommunication extends AbstractDecisionNode {
 	private static final String SUCCESS = "SUCCESS";
 	private static final String ERROR = "ERROR";
 	private static final String NONCE = "igCommNonce";
-	private Realm thisRealm;
 
 	/**
 	 * Configuration for the node.
@@ -121,8 +119,6 @@ public class IGCommunication extends AbstractDecisionNode {
 	public IGCommunication(@Assisted Config config, @Assisted Realm realm, AnnotatedServiceRegistry serviceRegistry) {
 		this.config = config;
 		igCommConfig = IGCommunicationConfigChoiceValues.getIGCommConfig(config.igCommConfigName());
-		thisRealm = realm;
-		
 	}
 
 	@Override
@@ -197,6 +193,7 @@ public class IGCommunication extends AbstractDecisionNode {
 		JweHeader publicJWEHeader = new JweHeader();
 		publicJWEHeader.setAlgorithm(JweAlgorithm.RSA_OAEP_256);
 		publicJWEHeader.setEncryptionMethod(EncryptionMethod.A256GCM);
+		publicJWEHeader.setContentType("JWT");
 
 		SignedThenEncryptedJwt stej = new SignedThenEncryptedJwt(publicJWEHeader, signedJWT, publicRsaKey);
 
@@ -291,9 +288,6 @@ public class IGCommunication extends AbstractDecisionNode {
          String resumeUri = context.request.serverUrl
                              .concat("/XUI/?")
                              .concat(originalQuery.toQueryString());
-		
-		//jwtClaims.put("referer", context.request.headers.get("referer").get(0));
-
 		jwtClaims.put("referer", resumeUri);
 
 		jwtClaims.setIssuer(context.request.hostName);
