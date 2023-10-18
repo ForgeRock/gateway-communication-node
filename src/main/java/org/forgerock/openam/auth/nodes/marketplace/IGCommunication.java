@@ -119,7 +119,7 @@ public class IGCommunication extends AbstractDecisionNode {
 	public IGCommunication(@Assisted Config config, @Assisted Realm realm, AnnotatedServiceRegistry serviceRegistry) {
 		this.config = config;
 		igCommConfig = IGCommunicationConfigChoiceValues.getIGCommConfig(config.igCommConfigName());
-	}
+	} 
 
 	@Override
 	public Action process(TreeContext context) {
