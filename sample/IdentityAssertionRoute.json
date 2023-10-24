@@ -1,0 +1,121 @@
+{
+  "name": "IdentityAssertion",
+  "baseURI": "http://example.com",
+  "condition": "${find(request.uri.path, '^/assertion')}",
+  "handler": "IdentityAssertion",
+  "heap": [
+    {
+      "type": "BaseUriDecorator",
+      "name": "baseUri"
+    },
+    {
+      "type": "TimerDecorator",
+      "name": "timer",
+      "config": {
+        "timeUnit": "ms"
+      }
+    },
+    {
+      "type": "CaptureDecorator",
+      "name": "capture",
+      "config": {
+        "captureEntity": false,
+        "captureContext": false,
+        "maxEntityLength": 524288
+      }
+    },
+    {
+      "type": "StaticResponseHandler",
+      "name": "RedirectBackToJourney",
+      "config": {
+        "status": 302,
+        "headers": {
+          "Location": [
+            "${contexts.jwtValidation.info.referer}&jwt=${contexts.jwtBuilder.value}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "ValidateIncomingJwt",
+      "type": "JwtValidationFilter",
+      "config": {
+        "jwt": "${request.queryParams['jwt'][0]}",
+        "secretsProvider": [
+          "IG-Decrypt",
+          "Node-Verify"
+        ],
+        "verificationSecretId": "id.key.for.verifying.jwt",
+        "comment": "decryptionSecretId only required if incoming JWT is encrypted and signed",
+        "decryptionSecretId": "id.key.for.decrypting.jwt",
+        "failureHandler": {
+          "type": "ScriptableHandler",
+          "config": {
+            "type": "application/x-groovy",
+            "source": [
+              "def response = new Response(Status.FORBIDDEN)",
+              "response.headers['Content-Type'] = 'text/html; charset=utf-8'",
+              "def errors = contexts.jwtValidationError.violations.collect{it.description}",
+              "def display = \"<html>Can't validate JWT:<br> ${contexts.jwtValidationError.jwt} \"",
+              "display <<=\"<br><br>For the following errors:<br> ${errors.join(\"<br>\")}</html>\"",
+              "response.entity=display as String",
+              "return response"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "IdentityAssertion",
+      "type": "Chain",
+      "config": {
+        "handler": "RedirectBackToJourney",
+        "filters": [
+          "ValidateIncomingJwt",
+          "AuthenticateLocalUser",
+          "CreateAssertionJwt"
+        ]
+      }
+    },
+    {
+      "type": "ScriptableFilter",
+      "name": "AuthenticateLocalUser",
+      "config": {
+        "type": "application/x-groovy",
+        "source": [
+          "// Local user authentication magic happens here...\"",
+          "attributes.localuser='iguser'",
+          "return next.handle(context, request)"
+        ]
+      }
+    },
+    {
+      "name": "CreateAssertionJwt",
+      "type": "JwtBuilderFilter",
+      "config": {
+        "template": {
+          "sub": "${contexts.jwtValidation.claims.subject}",
+          "aud": "${contexts.jwtValidation.claims.issuer}",
+          "iss": "${contexts.router.originalUri.host}",
+          "iat": "${now.epochSeconds}",
+          "nbf": "${now.epochSeconds}",
+          "exp": "${now.plusSeconds(10).epochSeconds}",
+          "iguser": "${attributes.localuser}"
+        },
+        "secretsProvider": [
+          "IG-Sign",
+          "Node-Encrypt"
+        ],
+        "signature": {
+          "secretId": "id.key.for.signing.jwt",
+          "algorithm": "RS256",
+          "encryption": {
+            "secretId": "id.key.for.encrypting.jwt",
+            "algorithm": "RSA-OAEP-256",
+            "method": "A256GCM"
+          }
+        }
+      }
+    }
+  ]
+}
