@@ -6,3 +6,6 @@
  *
 -->
 # Gateway Communication Example Usage
+1. Kerberos Authentication
+
+## Kerberos Authentication
