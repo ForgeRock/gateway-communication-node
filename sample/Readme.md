@@ -5,4 +5,4 @@
  * into a binding license agreement with ForgeRock.  
  *
 -->
-# IGCommunication
+# Gateway Communication Samples
