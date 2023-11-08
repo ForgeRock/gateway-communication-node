@@ -5,7 +5,7 @@
  * into a binding license agreement with ForgeRock.  
  *
 -->
-**Gateway Communication Example Usage**
+## Gateway Communication Example Usage
 * [Kerberos Authentication](https://github.com/ForgeRock/gateway-communication-node/blob/main/sample/Readme.md#kerberos-authentication)
 
 ## Kerberos Authentication
