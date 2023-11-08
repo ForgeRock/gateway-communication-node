@@ -5,4 +5,4 @@
  * into a binding license agreement with ForgeRock.  
  *
 -->
-# Gateway Communication Samples
+# Gateway Communication Example Usage
