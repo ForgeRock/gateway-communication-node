@@ -6,6 +6,6 @@
  *
 -->
 # Gateway Communication Example Usage
-1. Kerberos Authentication
+1. [Kerberos Authentication](https://github.com/ForgeRock/gateway-communication-node/blob/main/sample/Readme.md#kerberos-authentication)
 
 ## Kerberos Authentication
