@@ -319,8 +319,15 @@ public class IGCommunication extends AbstractDecisionNode {
 			for(Iterator<String> i = toSSMap.keySet().iterator(); i.hasNext();) {
 				String thisKey = i.next();
 				String ssKey = toSSMap.get(thisKey);
-				String thisVal = claims.get(thisKey).toString();
-				ns.putShared(ssKey, thisVal);
+				JsonValue thisValObj = claims.get(thisKey);
+				if (thisValObj.isString())
+					ns.putShared(ssKey, thisValObj.asString());
+				else if (thisValObj.isBoolean())
+					ns.putShared(ssKey, thisValObj.asBoolean());
+				else if (thisValObj.isNumber())
+					ns.putShared(ssKey, thisValObj.asNumber());
+				else
+					ns.putShared(ssKey, thisValObj.toString());
 			}
 	}
 	
