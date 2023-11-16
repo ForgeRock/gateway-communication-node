@@ -22,7 +22,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <forgerockDistMgmtReleasesUrl>https://maven.forgerock.org/repo/internal-releases</forgerockDistMgmtReleasesUrl>
+        <forgerockDistMgmtReleasesUrl>https://maven.forgerock.org/artifactory/internal-releases</forgerockDistMgmtReleasesUrl>
     </properties>
 
     <build>
@@ -39,7 +39,7 @@
         <repository>
             <id>forgerock-internal-releases</id>
             <name>ForgeRock Internal Release Repository</name>
-            <url>https://maven.forgerock.org/repo/internal-releases</url>
+            <url>https://maven.forgerock.org/artifactory/internal-releases</url>
         </repository>
     </distributionManagement>
 
@@ -95,7 +95,7 @@
             </snapshots>
             <id>forgerock-private-releases</id>
             <name>ForgeRock Private Release Repository</name>
-            <url>https://maven.forgerock.org/repo/private-releases</url>
+            <url>https://maven.forgerock.org/artifactory/private-releases</url>
         </repository>
     </repositories>
 
