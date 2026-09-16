@@ -148,7 +148,7 @@ public class IGCommunication extends AbstractDecisionNode {
 			}
 			
 		} catch (Exception ex) {
-			String stackTrace = org.apache.commons.lang.exception.ExceptionUtils.getStackTrace(ex);
+			String stackTrace = org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace(ex);
 			logger.error(loggerPrefix + "Exception occurred: " + stackTrace);
 			context.getStateFor(this).putShared(loggerPrefix + "Exception", new Date() + ": " + ex.getMessage());
 			context.getStateFor(this).putShared(loggerPrefix + "StackTrace", new Date() + ": " + stackTrace);			
